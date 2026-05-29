@@ -60,7 +60,7 @@ _console = Console()
 
 
 def _log_main(message: str) -> None:
-    _console.print(f"[bold white][orchestrator][/bold white] {message}")
+    print(f"[orchestrator] {message}", flush=True)
 
 
 # ---------------------------------------------------------------------------
@@ -97,13 +97,10 @@ def _run_one_worker(payload: dict[str, Any]) -> dict[str, Any]:
     seed_random: bool = payload.get("seed_random", False)
     session_id: str = payload["session_id"]
     workers: int = payload["workers"]
-    color = _worker_color(worker_index)
 
-    # Each worker gets its own rich Console for colored output
-    console = Console(highlight=False)
-
+    # Log lines use plain print() with worker prefix —
     def log(message: str) -> None:
-        console.print(f"[{color}][worker-{worker_index}][/{color}] {message}")
+        print(f"[worker-{worker_index}] {message}", flush=True)
 
     started_at = datetime.now()
 
