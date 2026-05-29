@@ -105,11 +105,6 @@ def _run_one_worker(payload: dict[str, Any]) -> dict[str, Any]:
     def log(message: str) -> None:
         console.print(f"[{color}][worker-{worker_index}][/{color}] {message}")
 
-    # Redirect log_step used by run_dialog
-    import config as _cl
-
-    _cl.log_step = log
-
     started_at = datetime.now()
 
     try:
@@ -128,10 +123,10 @@ def _run_one_worker(payload: dict[str, Any]) -> dict[str, Any]:
 
         used_http2_fallback = False
         try:
-            result = run_dialog(config, paths, use_http2_fallback=False, fingerprint_args=fp_args)
+            result = run_dialog(config, paths, use_http2_fallback=False, fingerprint_args=fp_args, log_func=log)
         except Exception:
             used_http2_fallback = True
-            result = run_dialog(config, paths, use_http2_fallback=True, fingerprint_args=fp_args)
+            result = run_dialog(config, paths, use_http2_fallback=True, fingerprint_args=fp_args, log_func=log)
 
         finished_at = datetime.now()
         payload = {

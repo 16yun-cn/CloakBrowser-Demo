@@ -101,7 +101,7 @@ llm_model = "qwen3.5-35b-a3b"
 max_retries = 3
 # Bypass proxy for CAPTCHA image CDN requests — CAPTCHA CDNs often
 # block proxy IPs. Requests to captcha.gtimg.com etc. go direct.
-bypass_proxy = true
+bypass_proxy = false
 
 [fingerprint]
 # 指纹种子 — 整数或 "random"。相同种子 = 相同指纹。

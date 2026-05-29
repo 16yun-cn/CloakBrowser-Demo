@@ -17,11 +17,11 @@ import contextlib
 import json
 import sys
 import time
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-import config as _cl
 from captcha import solve_captcha
 from cloakbrowser import launch_persistent_context
 from config import (
@@ -34,6 +34,7 @@ from config import (
     get_locator_config,
     get_runtime_config,
     load_config,
+    log_step,
     parse_args,
     prepare_profile,
     require_section,
@@ -300,7 +301,7 @@ _CAPTCHA_CDN_DOMAINS = [
 ]
 
 
-def _install_captcha_cdn_bypass(page: Any) -> None:
+def _install_captcha_cdn_bypass(page: Any, log_func: Callable[[str], None]) -> None:
     """Intercept CAPTCHA CDN requests and route them directly (bypass proxy)."""
     import urllib.request as _urlreq
 
@@ -329,9 +330,9 @@ def _install_captcha_cdn_bypass(page: Any) -> None:
     try:
         for domain in _CAPTCHA_CDN_DOMAINS:
             page.route(f"**/*{domain}**", _direct_fetch)
-        _cl.log_step("CAPTCHA CDN bypass installed (direct fetch, no proxy)")
+        log_func("CAPTCHA CDN bypass installed (direct fetch, no proxy)")
     except Exception as e:
-        _cl.log_step(f"CAPTCHA CDN bypass failed (non-fatal): {e}")
+        log_func(f"CAPTCHA CDN bypass failed (non-fatal): {e}")
 
 
 # ---------------------------------------------------------------------------
@@ -345,6 +346,7 @@ def run_dialog(
     use_http2_fallback: bool,
     *,
     fingerprint_args: list[str] | None = None,
+    log_func: Callable[[str], None] = log_step,
 ) -> dict[str, Any]:
     """Run a single doubao.com dialog.
 
@@ -354,6 +356,8 @@ def run_dialog(
         use_http2_fallback: Whether to disable HTTP/2 (retry mode).
         fingerprint_args: Optional pre-built fingerprint CLI args. If None,
             built from config via build_fingerprint_args().
+        log_func: Logging function (default: config.log_step). Concurrent
+            workers pass a rich-colored per-worker logger.
     """
     target = require_section(config, "target")
     session = require_section(config, "session")
@@ -371,27 +375,27 @@ def run_dialog(
 
     browser_context = launch_persistent_context(str(paths.profile_dir), **build_launch_kwargs(config, args))
     try:
-        _cl.log_step(f"Launching page, http2_fallback={use_http2_fallback}")
+        log_func(f"Launching page, http2_fallback={use_http2_fallback}")
         page = browser_context.new_page()
         page.set_default_timeout(int(session.get("navigation_timeout_ms", 90000)))
-        _cl.log_step(f"Navigating to {url}")
+        log_func(f"Navigating to {url}")
         page.goto(url, wait_until="domcontentloaded")
         try:
             page.wait_for_load_state("load", timeout=runtime_config["page_load_timeout_ms"])
         except Exception:
-            _cl.log_step("Page load state 'load' did not complete within config timeout, continuing")
+            log_func("Page load state 'load' did not complete within config timeout, continuing")
 
         # Solve CAPTCHA if present
         captcha_cfg = config.get("captcha", {})
         if captcha_cfg.get("enabled", True):
             if captcha_cfg.get("bypass_proxy", True):
-                _install_captcha_cdn_bypass(page)
+                _install_captcha_cdn_bypass(page, log_func)
 
             captcha_server = captcha_cfg.get("llm_server", "http://192.168.2.60:8001")
             captcha_model = captcha_cfg.get("llm_model", "qwen3.5-35b-a3b")
             captcha_retries = captcha_cfg.get("max_retries", 3)
             captcha_ss = str(paths.session_dir / "captcha-screenshot.png")
-            _cl.log_step("Checking for CAPTCHA...")
+            log_func("Checking for CAPTCHA...")
             solved = solve_captcha(
                 page,
                 server=captcha_server,
@@ -401,21 +405,21 @@ def run_dialog(
             )
             if not solved:
                 raise RuntimeError("CAPTCHA solving failed after max retries")
-            _cl.log_step("CAPTCHA check complete")
+            log_func("CAPTCHA check complete")
 
         page.screenshot(path=str(paths.before_screenshot), full_page=True)
 
         input_selectors = [selectors.input_selector] if selectors.input_selector else locator_config["input_selectors"]
-        _cl.log_step("Locating input element")
+        log_func("Locating input element")
         input_locator = find_first_visible(
             page,
             [selector for selector in input_selectors if selector],
             runtime_config["element_visible_timeout_ms"],
             runtime_config["max_selector_matches"],
         )
-        _cl.log_step("Filling prompt")
+        log_func("Filling prompt")
         fill_prompt(page, input_locator, prompt)
-        _cl.log_step("Submitting prompt")
+        log_func("Submitting prompt")
         submit_prompt(
             page,
             input_locator,
@@ -425,7 +429,7 @@ def run_dialog(
             runtime_config,
         )
 
-        _cl.log_step("Waiting for response")
+        log_func("Waiting for response")
         response_wait_started_at = time.time()
         response_text = extract_response(
             page,
@@ -439,10 +443,10 @@ def run_dialog(
         elapsed = time.time() - response_wait_started_at
         if elapsed < runtime_config["min_reply_wait_seconds"]:
             remaining = runtime_config["min_reply_wait_seconds"] - elapsed
-            _cl.log_step(f"Response detected early, waiting {remaining:.1f}s more before screenshot")
+            log_func(f"Response detected early, waiting {remaining:.1f}s more before screenshot")
             time.sleep(remaining)
         page.screenshot(path=str(paths.after_screenshot), full_page=True)
-        _cl.log_step("Response received")
+        log_func("Response received")
 
         return {
             "final_url": page.url,
