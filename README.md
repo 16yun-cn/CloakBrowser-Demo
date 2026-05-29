@@ -221,11 +221,32 @@ response_timeout_ms = 120000          # 回复等待超时（毫秒）
 
 ## 运行
 
-### 基本运行
+### 单 worker（基本运行）
 
 ```bash
 make run
+# 或
+uv run doubao
 ```
+
+### 多 worker 并发
+
+编辑 `config.toml`，设置并发数（默认 5）：
+
+```toml
+[concurrency]
+workers = 5
+```
+
+然后运行：
+
+```bash
+make run-concurrent
+# 或
+uv run doubao-concurrent
+```
+
+每个 worker 使用不同指纹种子（`seed + worker_index`），共享同一代理。产物在 `.runtime/sessions/<时间戳>/worker-N/` 下。
 
 ### 使用自定义配置文件
 
@@ -241,10 +262,12 @@ make report     # 最新 JSON 报告内容
 make sessions   # 列出所有 session 目录
 ```
 
-### 编译检查（不实际运行）
+### 检查与测试
 
 ```bash
-make check
+make lint       # Ruff 代码检查
+make test       # pytest 单元测试
+make check      # lint + test
 ```
 
 ### 清理
@@ -356,7 +379,7 @@ enabled = "false"
 ### 手动测试验证码识别
 
 ```bash
-uv run python scripts/test_captcha_recognizer.py
+uv run pytest tests/test_captcha_recognizer.py -v
 ```
 
 ---
@@ -419,19 +442,26 @@ docker run --rm \
 ## 项目结构
 
 ```
-CloakBrowser-Demo/
-├── captcha/                 # 验证码自动求解模块
-│   ├── __init__.py          # solve_captcha() 主流程
-│   ├── recognizer.py        # LLM 识别
-│   └── drag_captcha.py      # DOM 定位 + 拖拽执行
+├── src/
+│   ├── config.py             # 配置加载与校验
+│   ├── runner.py             # 单 worker 核心
+│   ├── orchestrator.py       # 多 worker 编排
+│   └── captcha/
+│       ├── __init__.py       # solve_captcha() 主流程
+│       ├── recognizer.py     # LLM 识别
+│       └── drag_captcha.py   # DOM 定位 + 拖拽执行
+├── tests/
+│   ├── conftest.py
+│   ├── test_config.py
+│   ├── test_runner.py
+│   ├── test_concurrent.py
+│   └── test_captcha_recognizer.py
 ├── scripts/
-│   ├── diag_fingerprint.py  # 指纹诊断脚本
-│   └── test_captcha_recognizer.py  # 识别器单元测试
+│   ├── diag_fingerprint.py   # 指纹诊断
+│   └── diag_captcha.py       # 验证码诊断
 ├── docs/
-│   └── captcha-diagnosis.md # 指纹排查文档
-├── config.template.toml     # 配置模板
-├── run_doubao.py            # 主程序入口
-├── Makefile                 # 常用命令
-├── pyproject.toml           # uv 项目配置
+├── config.template.toml      # 配置模板
+├── Makefile
+├── pyproject.toml
 └── README.md
 ```

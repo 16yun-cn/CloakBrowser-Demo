@@ -17,6 +17,13 @@ humanize = true
 navigation_timeout_ms = 90000
 response_timeout_ms = 120000
 
+[concurrency]
+# Number of concurrent browser instances (default: 5).
+# Each worker uses seed + worker_index as its fingerprint seed.
+# All workers share the same proxy.
+# Set to 1 to disable concurrency (same as running run_doubao.py directly).
+workers = 5
+
 [dialog]
 prompt = "你好，请用一句话介绍你自己。"
 input_selector = ""

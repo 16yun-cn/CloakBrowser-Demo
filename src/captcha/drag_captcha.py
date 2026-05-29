@@ -208,10 +208,12 @@ def _get_grid_cells(
         logger.info(f"Found {len(imgs)} image elements in container")
         cells = []
         for img in imgs:
-            cells.append({
-                "x": img["x"] + img["width"] / 2,
-                "y": img["y"] + img["height"] / 2,
-            })
+            cells.append(
+                {
+                    "x": img["x"] + img["width"] / 2,
+                    "y": img["y"] + img["height"] / 2,
+                }
+            )
         return cells
 
     # Fallback: equal division
@@ -225,10 +227,12 @@ def _get_grid_cells(
     cells = []
     for r in range(rows):
         for c in range(cols):
-            cells.append({
-                "x": box["x"] + (c + 0.5) * cell_w,
-                "y": box["y"] + (r + 0.5) * cell_h,
-            })
+            cells.append(
+                {
+                    "x": box["x"] + (c + 0.5) * cell_w,
+                    "y": box["y"] + (r + 0.5) * cell_h,
+                }
+            )
     return cells
 
 

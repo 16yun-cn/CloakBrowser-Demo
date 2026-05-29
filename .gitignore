@@ -12,6 +12,10 @@ config.toml
 # Lock file (reproducible via pyproject.toml)
 uv.lock
 
+# Cache
+.pytest_cache/
+.ruff_cache/
+
 # Runtime artifacts
 # captcha/
 portunnl_run/

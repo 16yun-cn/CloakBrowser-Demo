@@ -22,6 +22,7 @@ CONFIG_TOML = "config.toml"
 
 def main():
     import tomllib
+
     config = tomllib.loads(Path(CONFIG_TOML).read_text())
 
     # Build same launch args as run_doubao.py
@@ -74,10 +75,12 @@ def main():
     failed_requests = []
 
     def on_request_failed(request):
-        failed_requests.append({
-            "url": request.url,
-            "failure": request.failure,
-        })
+        failed_requests.append(
+            {
+                "url": request.url,
+                "failure": request.failure,
+            }
+        )
 
     page.on("requestfailed", on_request_failed)
 
@@ -162,7 +165,11 @@ def main():
 
     # === Failed requests (CAPTCHA-related) ===
     print(f"\n--- Failed Requests ({len(failed_requests)} total) ---")
-    captcha_fails = [r for r in failed_requests if any(k in r["url"].lower() for k in ["captcha", "tcaptcha", "verify", "shield", "gtimg"])]
+    captcha_fails = [
+        r
+        for r in failed_requests
+        if any(k in r["url"].lower() for k in ["captcha", "tcaptcha", "verify", "shield", "gtimg"])
+    ]
     for r in captcha_fails:
         print(f"  {r['url'][:120]}")
         print(f"    failure: {r['failure']}")

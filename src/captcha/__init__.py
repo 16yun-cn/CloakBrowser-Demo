@@ -27,16 +27,16 @@ from pathlib import Path
 from typing import Any
 
 from .drag_captcha import (
+    _click_refresh,
+    _has_image_load_error,
     detect_captcha,
     solve_drag_captcha,
     wait_for_captcha_images,
-    _has_image_load_error,
-    _click_refresh,
 )
 from .recognizer import (
-    CaptchaRecognition,
-    DEFAULT_SERVER,
     DEFAULT_MODEL,
+    DEFAULT_SERVER,
+    CaptchaRecognition,
     recognize_captcha,
 )
 
@@ -110,9 +110,8 @@ def solve_captcha(
         # Step 3: Screenshot (images confirmed loaded)
         ss_path = screenshot_path
         if ss_path is None:
-            tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
-            ss_path = tmp.name
-            tmp.close()
+            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+                ss_path = tmp.name
 
         try:
             page.screenshot(path=str(ss_path), full_page=False)
@@ -188,10 +187,10 @@ def _cleanup_temp(path: str | Path, original: str | Path | None) -> None:
     """Remove temp screenshot if it wasn't explicitly requested."""
     if original is not None:
         return
-    try:
+    import contextlib
+
+    with contextlib.suppress(Exception):
         Path(path).unlink(missing_ok=True)
-    except Exception:
-        pass
 
 
 __all__ = [
