@@ -25,6 +25,7 @@ from config import (
     ConfigError,
     build_session_id,
     get_concurrency,
+    is_seed_random,
     load_config,
     require_section,
     write_json,
@@ -93,6 +94,7 @@ def _run_one_worker(payload: dict[str, Any]) -> dict[str, Any]:
     worker_index: int = payload["worker_index"]
     config_path: str = payload["config_path"]
     base_seed: int = payload["base_seed"]
+    seed_random: bool = payload.get("seed_random", False)
     session_id: str = payload["session_id"]
     workers: int = payload["workers"]
     color = _worker_color(worker_index)
@@ -112,7 +114,12 @@ def _run_one_worker(payload: dict[str, Any]) -> dict[str, Any]:
 
     try:
         config = load_config(Path(config_path))
-        seed = base_seed + worker_index
+        if seed_random:
+            import random
+
+            seed = random.randint(100_000, 999_999)
+        else:
+            seed = base_seed + worker_index
         log(f"seed={seed}")
 
         fp_args = build_fingerprint_args(config, seed_override=seed)
@@ -206,9 +213,13 @@ def main() -> int:
     base_dir = Path(str(require_section(config, "session").get("base_dir", "./.runtime/sessions")))
     parent_dir = base_dir / session_id
 
-    base_seed = int(require_section(config, "fingerprint").get("seed", 42069))
+    seed_random = is_seed_random(config)
+    if seed_random:
+        _log_main(f"Starting {workers} worker(s), seed = random")
+    else:
+        base_seed = int(require_section(config, "fingerprint").get("seed", 42069))
+        _log_main(f"Starting {workers} worker(s), base seed = {base_seed}")
 
-    _log_main(f"Starting {workers} worker(s), base seed = {base_seed}")
     _log_main(f"Session: {session_id}")
 
     # --- Single worker path (no multiprocessing overhead) ---
@@ -217,7 +228,8 @@ def main() -> int:
             {
                 "config_path": str(config_path),
                 "worker_index": 0,
-                "base_seed": base_seed,
+                "base_seed": base_seed if not seed_random else 0,
+                "seed_random": seed_random,
                 "session_id": session_id,
                 "workers": 1,
             }
@@ -229,7 +241,8 @@ def main() -> int:
         {
             "config_path": str(config_path),
             "worker_index": i,
-            "base_seed": base_seed,
+            "base_seed": base_seed if not seed_random else 0,
+            "seed_random": seed_random,
             "session_id": session_id,
             "workers": workers,
         }

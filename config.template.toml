@@ -104,6 +104,8 @@ max_retries = 3
 bypass_proxy = true
 
 [fingerprint]
+# 指纹种子 — 整数或 "random"。相同种子 = 相同指纹。
+# 设为 "random" 时每次运行（多 worker 下每个 worker）随机生成。
 seed = 42069
 platform = "macos"
 brand = "Chrome"

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 import shutil
 from dataclasses import dataclass
 from datetime import datetime
@@ -281,6 +282,25 @@ def build_selector_config(config: dict[str, Any]) -> SelectorConfig:
 # ---------------------------------------------------------------------------
 
 
+def resolve_fingerprint_seed(config: dict[str, Any]) -> int:
+    """Return the fingerprint seed as an int.
+
+    If config sets seed to ``"random"``, generates a random seed (100000–999999).
+    Otherwise returns the configured integer value.
+    """
+    fingerprint = require_section(config, "fingerprint")
+    seed_value = fingerprint.get("seed")
+    if str(seed_value).strip().lower() == "random":
+        return random.randint(100_000, 999_999)
+    return int(seed_value)
+
+
+def is_seed_random(config: dict[str, Any]) -> bool:
+    """Check whether the fingerprint seed is set to random mode."""
+    fingerprint = require_section(config, "fingerprint")
+    return str(fingerprint.get("seed", "")).strip().lower() == "random"
+
+
 def build_fingerprint_args(
     config: dict[str, Any],
     *,
@@ -315,6 +335,8 @@ def build_fingerprint_args(
 
     if seed_override is not None:
         values["seed"] = seed_override
+    elif is_seed_random(config):
+        values["seed"] = random.randint(100_000, 999_999)
 
     webrtc_ip_mode = str(values["webrtc_ip_mode"])
     if webrtc_ip_mode != "auto" and "." not in webrtc_ip_mode and ":" not in webrtc_ip_mode:
