@@ -1,0 +1,17 @@
+.runtime/
+*.pyc
+__pycache__/
+CloakBrowser/
+
+# macOS
+.DS_Store
+
+# Local config (secrets, local proxy settings)
+config.toml
+
+# Lock file (reproducible via pyproject.toml)
+uv.lock
+
+# Runtime artifacts
+# captcha/
+portunnl_run/

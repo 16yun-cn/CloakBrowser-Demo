@@ -1,0 +1,123 @@
+[target]
+url = "https://www.doubao.com"
+
+[proxy]
+server = "http://t.16yun.cn:31111"
+username = "user"
+password = "pass"
+# Set to false to disable proxy entirely (useful for debugging CAPTCHA)
+enabled = "true"
+
+[session]
+base_dir = "./.runtime/sessions"
+session_name = ""
+profile_template_dir = ""
+headless = false
+humanize = true
+navigation_timeout_ms = 90000
+response_timeout_ms = 120000
+
+[dialog]
+prompt = "你好，请用一句话介绍你自己。"
+input_selector = ""
+submit_selector = ""
+response_selector = ""
+
+[runtime]
+min_reply_wait_seconds = 30
+page_load_timeout_ms = 15000
+element_visible_timeout_ms = 1000
+submit_visible_timeout_ms = 10000
+submit_retry_visible_timeout_ms = 1500
+submit_state_timeout_ms = 3000
+submit_state_poll_interval_ms = 200
+response_poll_interval_ms = 1000
+max_selector_matches = 20
+max_button_matches = 50
+send_button_min_x_ratio = 0.6
+send_button_y_tolerance_px = 40
+response_min_x = 280
+response_min_y = 60
+response_max_y = 760
+response_min_text_length = 4
+max_response_excerpt_length = 1000
+
+[locators]
+input_selectors = [
+  "textarea[placeholder*='豆包']",
+  "textarea[placeholder*='发送']",
+  "textarea[placeholder*='message' i]",
+  "[role='textbox'][contenteditable='true']",
+  "[contenteditable='true'][placeholder*='豆包']",
+  "[contenteditable='true'][data-slate-editor='true']",
+  "[contenteditable='true']",
+  "[role='textbox']",
+  "input[type='text']",
+  "textarea",
+]
+submit_button_selectors = [
+  "button:has-text('发送')",
+  "button:has-text('发送消息')",
+  "button:has-text('提交')",
+  "button:has-text('Send')",
+  "button[aria-label*='发送']",
+  "button[aria-label*='send' i]",
+]
+response_candidate_selectors = [
+  "[data-testid*='message']",
+  "[class*='message']",
+  "[class*='answer']",
+  "[class*='assistant']",
+  "main p",
+  "main span",
+  "main div",
+]
+noise_tokens = [
+  "下载电脑版",
+  "登录",
+  "新对话",
+  "内容由豆包 AI 生成",
+  "发消息",
+  "快速",
+  "PPT 生成",
+  "图像生成",
+  "帮我写作",
+  "翻译",
+  "编程",
+  "更多",
+]
+
+[captcha]
+enabled = true
+llm_server = "http://192.168.2.60:8001"
+llm_model = "qwen3.5-35b-a3b"
+max_retries = 3
+# Bypass proxy for CAPTCHA image CDN requests — CAPTCHA CDNs often
+# block proxy IPs. Requests to captcha.gtimg.com etc. go direct.
+bypass_proxy = true
+
+[fingerprint]
+seed = 42069
+platform = "macos"
+brand = "Chrome"
+brand_version = "146"
+platform_version = "15.0.0"
+gpu_vendor = "Intel Inc."
+gpu_renderer = "Intel Iris OpenGL Engine"
+hardware_concurrency = 8
+device_memory = 8
+screen_width = 1440
+screen_height = 900
+timezone = "Asia/Shanghai"
+locale = "zh-CN"
+storage_quota_mb = 5000
+webrtc_ip_mode = "auto"
+# Disable noise injection — CAPTCHA systems detect canvas/WebGL/audio noise as tampering.
+# Images loading then disappearing is classic noise-detection symptom.
+# Set to "true" only for sites that need noise; most anti-bot sites need "false".
+noise = "false"
+
+[artifacts]
+before_send_filename = "doubao-before.png"
+after_reply_filename = "doubao-after.png"
+run_report_filename = "doubao-run.json"

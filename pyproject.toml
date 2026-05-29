@@ -1,0 +1,15 @@
+[project]
+name = "cloakbrowser-demo"
+version = "0.1.0"
+description = "CloakBrowser demo — doubao.com automation with CAPTCHA solving"
+requires-python = ">=3.10"
+dependencies = [
+    "cloakbrowser",
+    "playwright",
+    "tomli; python_version < '3.11'",
+    "hatchling",
+    "httpx[socks]",
+]
+
+[tool.uv.sources]
+cloakbrowser = { path = "CloakBrowser" }
